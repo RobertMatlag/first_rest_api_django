@@ -1,8 +1,11 @@
 from django.db import models
 from datetime import datetime
+from safedelete.models import SafeDeleteModel
+from safedelete.models import SOFT_DELETE, SOFT_DELETE_CASCADE
 
 
-class Album(models.Model):
+class Album(SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE_CASCADE
     name = models.CharField(max_length=200)
     pub_date = models.DateTimeField(default=datetime.now)
 
@@ -10,7 +13,8 @@ class Album(models.Model):
         return self.name
 
 
-class Song(models.Model):
+class Song(SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE
     name = models.CharField(max_length=200)
     length = models.IntegerField()
     views = models.IntegerField()
@@ -20,7 +24,8 @@ class Song(models.Model):
         return self.name
 
 
-class Playlist(models.Model):
+class Playlist(SafeDeleteModel):
+    _safedelete_policy = SOFT_DELETE
     name = models.CharField(max_length=200)
     songs = models.ManyToManyField(Song)
 
