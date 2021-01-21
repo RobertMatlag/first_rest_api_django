@@ -1,8 +1,10 @@
-from django.http import JsonResponse, HttpRequest
+from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
+from django.core.serializers import serialize
+
 
 from .models import Album, Song, Playlist
 
@@ -15,16 +17,30 @@ def _send_chosen_page(request, records):
     return JsonResponse(records[start_record:last_record], safe=False)
 
 
+def _send_one_record(class_name, pk):
+    try:
+        album = class_name.objects.filter(pk=pk)
+        data = serialize("json", album, fields=('name', 'pub_date'))
+        return HttpResponse(data, content_type="application/json")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "not valid data"}, safe=False)
+    except class_name.DoesNotExist:
+        return JsonResponse({"error": "Your record having provided primary key does not exist"}, safe=False)
+
+
 class AlbumView(View):
-    def get(self, request: HttpRequest):
-        albums = list(Album.objects.values())
-        return _send_chosen_page(request, albums)
+    def get(self, request, pk=None):
+        if not pk:
+            albums = list(Album.objects.values())
+            return _send_chosen_page(request, albums)
+
+        return _send_one_record(Album, pk)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super(AlbumView, self).dispatch(request, *args, **kwargs)
 
-    def post(self, request: HttpRequest):
+    def post(self, request):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -35,7 +51,7 @@ class AlbumView(View):
         except json.JSONDecodeError:
             return JsonResponse({"error": "not valid data"}, safe=False)
 
-    def patch(self, request: HttpRequest, pk):
+    def patch(self, request, pk):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -53,7 +69,7 @@ class AlbumView(View):
         except Album.DoesNotExist:
             return JsonResponse({"error": "Your album having provided primary key does not exist"}, safe=False)
 
-    def put(self, request: HttpRequest, pk):
+    def put(self, request, pk):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -68,7 +84,7 @@ class AlbumView(View):
         except Album.DoesNotExist:
             return JsonResponse({"error": "Your album having provided primary key does not exist"}, safe=False)
 
-    def delete(self, request: HttpRequest, pk):
+    def delete(self, request, pk):
         try:
             album = Album.objects.get(pk=pk)
             album.delete()
@@ -78,15 +94,18 @@ class AlbumView(View):
 
 
 class SongView(View):
-    def get(self, request: HttpRequest):
-        songs = list(Song.objects.values())
-        return _send_chosen_page(request, songs)
+    def get(self, request, pk=None):
+        if not pk:
+            songs = list(Song.objects.values())
+            return _send_chosen_page(request, songs)
+
+        return _send_one_record(Song, pk)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super(SongView, self).dispatch(request, *args, **kwargs)
 
-    def post(self, request: HttpRequest):
+    def post(self, request):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -98,7 +117,7 @@ class SongView(View):
         except json.JSONDecodeError:
             return JsonResponse({"error": "not valid data"}, safe=False)
 
-    def patch(self, request: HttpRequest, pk):
+    def patch(self, request, pk):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -120,7 +139,7 @@ class SongView(View):
         except Song.DoesNotExist:
             return JsonResponse({"error": "Your song having provided primary key does not exist"}, safe=False)
 
-    def put(self, request: HttpRequest, pk):
+    def put(self, request, pk):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -134,10 +153,10 @@ class SongView(View):
             return JsonResponse({"overwrite": data}, safe=False)
         except json.JSONDecodeError:
             return JsonResponse({"error": "not a valid data"}, safe=False)
-        except Album.DoesNotExist:
+        except Song.DoesNotExist:
             return JsonResponse({"error": "Your song having provided primary key does not exist"}, safe=False)
 
-    def delete(self, request: HttpRequest, pk):
+    def delete(self, request, pk):
         try:
             song = Song.objects.get(pk=pk)
             song.delete()
@@ -147,16 +166,18 @@ class SongView(View):
 
 
 class PlaylistView(View):
-    def get(self, request: HttpRequest):
-        playlists = list(Playlist.objects.values())
-        print(playlists)
-        return _send_chosen_page(request, playlists)
+    def get(self, request, pk=None):
+        if not pk:
+            playlists = list(Playlist.objects.values())
+            return _send_chosen_page(request, playlists)
+
+        return _send_one_record(Playlist, pk)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         return super(PlaylistView, self).dispatch(request, *args, **kwargs)
 
-    def post(self, request: HttpRequest):
+    def post(self, request):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -167,7 +188,7 @@ class PlaylistView(View):
         except json.JSONDecodeError:
             return JsonResponse({"error": "not valid data"}, safe=False)
 
-    def patch(self, request: HttpRequest, pk):
+    def patch(self, request, pk):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -183,10 +204,10 @@ class PlaylistView(View):
             return JsonResponse({"updated": data}, safe=False)
         except json.JSONDecodeError:
             return JsonResponse({"error": "not a valid data"}, safe=False)
-        except Song.DoesNotExist:
+        except Playlist.DoesNotExist:
             return JsonResponse({"error": "Your playlist having provided primary key does not exist"}, safe=False)
 
-    def put(self, request: HttpRequest, pk):
+    def put(self, request, pk):
         try:
             data = request.body.decode('utf8')
             data = json.loads(data)
@@ -198,10 +219,10 @@ class PlaylistView(View):
             return JsonResponse({"overwrite": data}, safe=False)
         except json.JSONDecodeError:
             return JsonResponse({"error": "not a valid data"}, safe=False)
-        except Album.DoesNotExist:
+        except Playlist.DoesNotExist:
             return JsonResponse({"error": "Your playlist having provided primary key does not exist"}, safe=False)
 
-    def delete(self, request: HttpRequest, pk):
+    def delete(self, request, pk):
         try:
             playlist = Playlist.objects.get(pk=pk)
             playlist.delete()
