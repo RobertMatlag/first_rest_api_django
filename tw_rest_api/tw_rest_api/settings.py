@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'spotify.logging_middleware.LoggingMiddleware'
 ]
 
 ROOT_URLCONF = 'tw_rest_api.urls'
