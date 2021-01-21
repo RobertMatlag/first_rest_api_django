@@ -28,13 +28,26 @@ def _send_one_record(class_name, pk):
         return JsonResponse({"error": "Your record having provided primary key does not exist"}, safe=False)
 
 
-class AlbumView(View):
-    def get(self, request, pk=None):
-        if not pk:
-            albums = list(Album.objects.values())
-            return _send_chosen_page(request, albums)
+def delete_record(class_name, pk):
+    try:
+        obj = class_name.objects.get(pk=pk)
+        obj.delete()
+        return JsonResponse({"deleted": True}, safe=False)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "not a valid primary key"}, safe=False)
 
-        return _send_one_record(Album, pk)
+
+def _handle_get_request(pk, class_name, request):
+    if not pk:
+        objs = list(class_name.objects.values())
+        return _send_chosen_page(request, objs)
+    return _send_one_record(class_name, pk)
+
+
+class AlbumView(View):
+    @staticmethod
+    def get(request, pk=None):
+        return _handle_get_request(pk, Album, request)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -84,22 +97,15 @@ class AlbumView(View):
         except Album.DoesNotExist:
             return JsonResponse({"error": "Your album having provided primary key does not exist"}, safe=False)
 
-    def delete(self, request, pk):
-        try:
-            album = Album.objects.get(pk=pk)
-            album.delete()
-            return JsonResponse({"deleted": True}, safe=False)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "not a valid primary key"}, safe=False)
+    @staticmethod
+    def delete(request, pk):
+        return delete_record(Album, pk)
 
 
 class SongView(View):
-    def get(self, request, pk=None):
-        if not pk:
-            songs = list(Song.objects.values())
-            return _send_chosen_page(request, songs)
-
-        return _send_one_record(Song, pk)
+    @staticmethod
+    def get(request, pk=None):
+        return _handle_get_request(pk, Song, request)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -156,22 +162,15 @@ class SongView(View):
         except Song.DoesNotExist:
             return JsonResponse({"error": "Your song having provided primary key does not exist"}, safe=False)
 
-    def delete(self, request, pk):
-        try:
-            song = Song.objects.get(pk=pk)
-            song.delete()
-            return JsonResponse({"deleted": True}, safe=False)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "not a valid primary key"}, safe=False)
+    @staticmethod
+    def delete(request, pk):
+        return delete_record(Song, pk)
 
 
 class PlaylistView(View):
-    def get(self, request, pk=None):
-        if not pk:
-            playlists = list(Playlist.objects.values())
-            return _send_chosen_page(request, playlists)
-
-        return _send_one_record(Playlist, pk)
+    @staticmethod
+    def get(request, pk=None):
+        return _handle_get_request(pk, Playlist, request)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -222,13 +221,9 @@ class PlaylistView(View):
         except Playlist.DoesNotExist:
             return JsonResponse({"error": "Your playlist having provided primary key does not exist"}, safe=False)
 
-    def delete(self, request, pk):
-        try:
-            playlist = Playlist.objects.get(pk=pk)
-            playlist.delete()
-            return JsonResponse({"deleted": True}, safe=False)
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "not a valid primary key"}, safe=False)
+    @staticmethod
+    def delete(request, pk):
+        return delete_record(Playlist, pk)
 
     @staticmethod
     def _add_songs_to_playlist(playlist, songs_id):

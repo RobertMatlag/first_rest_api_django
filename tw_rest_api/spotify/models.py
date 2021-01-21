@@ -6,6 +6,7 @@ from safedelete.models import SOFT_DELETE, SOFT_DELETE_CASCADE
 
 class Album(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE_CASCADE
+
     name = models.CharField(max_length=200)
     pub_date = models.DateTimeField(default=datetime.now)
 
@@ -15,6 +16,7 @@ class Album(SafeDeleteModel):
 
 class Song(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE
+
     name = models.CharField(max_length=200)
     length = models.IntegerField()
     views = models.IntegerField()
@@ -26,18 +28,9 @@ class Song(SafeDeleteModel):
 
 class Playlist(SafeDeleteModel):
     _safedelete_policy = SOFT_DELETE
+
     name = models.CharField(max_length=200)
     songs = models.ManyToManyField(Song)
 
     def __str__(self):
         return self.name
-
-    # def values(self):
-    #     data = {
-    #         "name": self.name,
-    #         "songs": self.author,
-    #         "pictures": list(Picture.objects.filter(game__pk=self.id).values('url')),
-    #         "urls": list(Url.objects.filter(game__pk=self.id).values('adress')),
-    #     }
-    #
-    # return data
